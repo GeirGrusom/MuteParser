@@ -26,6 +26,10 @@ namespace Parser
                     return OnVisit(method);
                 case CompilationUnit compilationUnit:
                     return OnVisit(compilationUnit);
+                case Constant constant:
+                    return OnVisit(constant);
+                case Binary bin:
+                    return OnVisit(bin);
                 default:
                     throw new NotImplementedException();
             }
@@ -52,6 +56,11 @@ namespace Parser
                     return OnVisit(notEqual);
             }
             throw new NotImplementedException();
+        }
+
+        protected virtual Expression OnVisit(Constant expression)
+        {
+            return expression;
         }
 
         protected virtual Expression OnVisit(Add expression)
@@ -156,7 +165,7 @@ namespace Parser
 
             if (!body.SequenceEqual(expression.Body))
             {
-                return new CompilationUnit(expression.Module, expression.Scope, body);
+                return new CompilationUnit(expression.Scope, body);
             }
 
             return expression;

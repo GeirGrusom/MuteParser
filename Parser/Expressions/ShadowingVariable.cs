@@ -12,6 +12,10 @@ namespace Parser.Expressions
         public ShadowingVariable(Variable shadow, TypeShim type) : base(shadow.Name, shadow.Mutable, type)
         {
             this.Shadow = shadow;
+            while(this.Shadow is ShadowingVariable shadowing)
+            {
+                this.Shadow = shadowing.Shadow;
+            }
         }
     }
 }

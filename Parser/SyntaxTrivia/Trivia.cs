@@ -4,13 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Runtime
+namespace Parser.SyntaxTrivia
 {
-    public struct Never
-    {
-    }
-
-    public struct Null
+    public abstract class Trivia
     {
     }
 }

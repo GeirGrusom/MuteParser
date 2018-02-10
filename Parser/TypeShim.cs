@@ -38,6 +38,33 @@ namespace Parser
             hashCode = hashCode * -1521134295 + Nullable.GetHashCode();
             return hashCode;
         }
+
+        public static bool operator ==(TypeShim left, TypeShim right)
+        {
+            if(left is  null && right is null)
+            {
+                return true;
+            }
+            if(left is null || right is null)
+            {
+                return false;
+            }
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(TypeShim left, TypeShim right)
+        {
+            if (left is null && right is null)
+            {
+                return false;
+            }
+            if (left is null || right is null)
+            {
+                return true;
+            }
+            return !left.Equals(right);
+        }
+
     }
 
     public sealed class NullTypeShim : TypeShim
@@ -401,6 +428,29 @@ namespace Parser
             return result;
         }
 
+        public static Type GetClrTypeFromShim(TypeShim shim)
+        {
+            if (shim is ClrTypeShim clrType)
+            {
+                return clrType.ClrType;
+            }
+            if (shim is ArrayTypeShim arrayType)
+            {
+                return GetClrTypeFromShim(arrayType.ArrayType).MakeArrayType(arrayType.Dimensions.Length);
+            }
+            if (shim is FunctionTypeShim functionType)
+            {
+                if (functionType.ReturnType == Types.Void)
+                {
+                    return System.Linq.Expressions.LambdaExpression.GetActionType(functionType.Parameters.Select(x => GetClrTypeFromShim(x.Type)).ToArray());
+                }
+                else
+                {
+                    return System.Linq.Expressions.LambdaExpression.GetFuncType(functionType.Parameters.Select(x => GetClrTypeFromShim(x.Type)).Concat(new[] { GetClrTypeFromShim(functionType.ReturnType) }).ToArray());
+                }
+            }
+            return null;
+        }
 
 
         public static bool IsAssignable(TypeShim target, TypeShim source)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Parser.SyntaxNodes;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,15 +8,68 @@ using System.Threading.Tasks;
 
 namespace Parser
 {
-    class Program
+    static class Program
     {
+        static void PrintSyntaxNodes(IEnumerable<SyntaxNode> nodes)
+        {
+
+            int lineNo = 1;
+            void IncrementLineNumber(bool includeNewline = true)
+            {
+                if (includeNewline)
+                {
+                    Console.WriteLine();
+                }
+                Console.BackgroundColor = ConsoleColor.Gray;
+                Console.ForegroundColor = ConsoleColor.Black;
+                Console.Write(lineNo.ToString().PadRight(4, ' '));
+                Console.BackgroundColor = ConsoleColor.Black;
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write(' ');
+                ++lineNo;
+            }
+
+            IncrementLineNumber(false);
+
+            foreach (var node in nodes)
+            {
+                if(node.Kind == Kind.Keyword)
+                {
+                    Console.ForegroundColor = ConsoleColor.Blue;
+                }
+                else if(node.Kind == Kind.Literal)
+                {
+                    Console.ForegroundColor = ConsoleColor.White;
+                }
+                else if(node.Kind == Kind.TypeNullable || node.Kind == Kind.ArrayNullable || node.Kind == Kind.TupleNullable || node.Kind == Kind.UnionNullable)
+                {
+                    Console.ForegroundColor = ConsoleColor.White;
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                }
+                for(int i = 0; i < node.Value.Length; ++i)
+                {
+                    if(node.Value[i] == '\n')
+                    {
+                        IncrementLineNumber();
+                    }
+                    else
+                    {
+                        Console.Write(node.Value[i]);
+                    }
+                }
+            }
+            Console.WriteLine();
+            Console.BackgroundColor = ConsoleColor.Black;
+        }
+
         static void Main(string[] args)
         {
 
             string c = 
-@"module foo
-
-main(args: string?[]) 
+@"main(args: string?[]) 
 {
     let def: i32? <- 100
     if(def != null)
@@ -29,12 +83,19 @@ main(args: string?[])
 }
 ";
 
-            Console.WriteLine(c);
             var stream = new MemoryStream(Encoding.UTF8.GetBytes(c));
+            var references = new References(new [] { typeof(System.String).Assembly });
 
-            var parser = new Parser(stream);
-
+            var parser = new Parser(references, stream);
+            
             var res = parser.Parse();
+
+            PrintSyntaxNodes(parser.GetSyntaxNodes());
+
+            if(parser.SyntaxErrors.Count != 0)
+            {
+                Console.WriteLine("Parsing failed");
+            }
 
             foreach(var err in parser.SyntaxErrors)
             {

@@ -44,8 +44,16 @@
 
         private static bool IsNullable(PropertyInfo prop)
         {
-            var notNull = prop.GetCustomAttributes().Any(x => x.GetType().Name == "NotNull") || prop.GetMethod.ReturnTypeCustomAttributes.GetCustomAttributes(false).Any(x => x.GetType().Name == "NotNull");
-            return !notNull;
+
+            bool isNullableValueType = prop.PropertyType.IsValueType && prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>);
+
+            if (prop.PropertyType.IsValueType)
+            {
+                return isNullableValueType;
+            }
+
+            var notNullAttrib = prop.GetCustomAttributes().Any(x => x.GetType().Name == "NotNull") || prop.GetMethod.ReturnTypeCustomAttributes.GetCustomAttributes(false).Any(x => x.GetType().Name == "NotNull");
+            return !notNullAttrib;
         }
 
         private static bool IsNullable(FieldInfo prop)
