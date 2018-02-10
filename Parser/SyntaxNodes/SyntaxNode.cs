@@ -35,6 +35,9 @@ namespace Parser.SyntaxNodes
         MethodArgumentsSeparator,
         MethodArgumentsEnd,
         VariableType,
+        CallStart,
+        CallSeparator,
+        CallEnd,
     }
 
     public class SyntaxNode

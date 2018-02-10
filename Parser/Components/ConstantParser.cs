@@ -58,7 +58,7 @@
             {
                 return new Constant(int.Parse(value.Value), Types.Int);
             }
-            return Parser.Parse<Member>();
+            return Parser.Parse<Call>();
         }
     }
 }

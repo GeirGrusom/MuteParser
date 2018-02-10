@@ -17,7 +17,7 @@ namespace Parser.Expressions
             MemberInfo = memberInfo;
         }
 
-        public MemberInfo MemberInfo { get; }
+        public MemberInfo MemberInfo { get; internal set; }
 
         public Expression Left { get; }
 

@@ -50,7 +50,7 @@ namespace Parser.Components
 
         private Expression ParseStatement()
         {
-            return Parser.Parse<VariableDeclaration>() ?? Parser.Parse<Assign>() ?? Parser.Parse<If>() ?? Parser.Parse<Method>() ?? Parser.Parse<Using>();
+            return Parser.Parse<VariableDeclaration>() ?? Parser.Parse<Assign>() ?? Parser.Parse<If>() ?? Parser.Parse<Method>() ?? Parser.Parse<Using>() ?? Parser.Parse<Call>();
         }
 
     }

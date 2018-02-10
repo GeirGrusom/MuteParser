@@ -69,7 +69,7 @@ namespace Parser
         {
 
             string c = 
-@"main(args: string?[]) 
+@"main(args: string[]?) 
 {
     let def: i32? <- 100
     if(def != null)
@@ -80,6 +80,8 @@ namespace Parser
     {
         let abc : i32 <- def
     }
+
+    def.ToString()
 }
 ";
 

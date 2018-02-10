@@ -77,6 +77,7 @@ namespace Parser
             AddParser<CompilationUnit>(new Components.CompilationUnitParser(this));
             AddParser<Parameter>(new Components.ParameterParser(this));
             AddParser<DataType>(new Components.DataTypeParser(this));
+            AddParser<Call>(new Components.CallParser(this));
         }
 
         private void AddParser<TType>(Components.ParserComponent component)
