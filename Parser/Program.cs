@@ -37,7 +37,7 @@ namespace Parser
                 {
                     Console.ForegroundColor = ConsoleColor.Blue;
                 }
-                else if(node.Kind == Kind.Literal)
+                else if(node.Kind == Kind.Literal || node.Kind == Kind.StringStart || node.Kind == Kind.StringContents || node.Kind == Kind.StringEnd)
                 {
                     Console.ForegroundColor = ConsoleColor.White;
                 }
@@ -80,8 +80,9 @@ namespace Parser
     {
         let abc : i32 <- def
     }
+    let foobar <- 100 + -10
 
-    def.ToString()
+    def.ToString(!?""Hello \""World!\""\n"")
 }
 ";
 

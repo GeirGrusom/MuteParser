@@ -38,6 +38,9 @@ namespace Parser.SyntaxNodes
         CallStart,
         CallSeparator,
         CallEnd,
+        StringContents,
+        StringEnd,
+        StringStart,
     }
 
     public class SyntaxNode

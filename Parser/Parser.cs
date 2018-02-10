@@ -55,7 +55,7 @@ namespace Parser
             unresolvedTypes = new Dictionary<(string, bool), UnresolvedTypeShim>();
         }
 
-        private void AddSyntaxNode(SyntaxNodes.SyntaxNode node)
+        public void AddSyntaxNode(SyntaxNode node)
         {
             syntaxNodes.Add(node);
         }
@@ -78,6 +78,7 @@ namespace Parser
             AddParser<Parameter>(new Components.ParameterParser(this));
             AddParser<DataType>(new Components.DataTypeParser(this));
             AddParser<Call>(new Components.CallParser(this));
+            AddParser<Unary>(new Components.ParseUnary(this));
         }
 
         private void AddParser<TType>(Components.ParserComponent component)
@@ -465,7 +466,7 @@ namespace Parser
             }
         }
 
-        private int ReadChar()
+        public int ReadChar()
         {
             if (currentPosition.Value >= uncomittedBuffer.Count)
             {

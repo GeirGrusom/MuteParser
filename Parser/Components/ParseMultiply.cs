@@ -14,7 +14,7 @@ namespace Parser.Components
 
         public override Expression Parse()
         {
-            var lhs = Parser.Parse<Constant>();
+            var lhs = Parser.Parse<Unary>();
 
             if (Parser.TryReadVerbatim(Kind.Operator, out var op, '*', '/', '%'))
             {
