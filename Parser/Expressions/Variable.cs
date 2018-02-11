@@ -23,14 +23,5 @@ namespace Parser.Expressions
         {
             return Name;
         }
-
-        internal static Variable GetShadowedVariable(Variable variable)
-        {
-            if (variable is ShadowingVariable shadowVar)
-            {
-                return shadowVar.Shadow;
-            }
-            return variable;
-        }
     }
 }

@@ -30,10 +30,72 @@ namespace Parser
                     return OnVisit(constant);
                 case Binary bin:
                     return OnVisit(bin);
+                case Unary unary:
+                    return OnVisit(unary);
                 default:
                     throw new NotImplementedException();
             }
 
+        }
+
+        protected virtual Expression OnVisit(Unary expression)
+        {
+            switch(expression)
+            {
+                case Negate negate:
+                    return OnVisit(negate);
+                case Positive positive:
+                    return OnVisit(positive);
+                case Not not:
+                    return OnVisit(not);
+                case Return ret:
+                    return OnVisit(ret);
+                case NotNull notNull:
+                    return OnVisit(notNull);
+                default:
+                    throw new NotImplementedException();
+            }
+
+        }
+
+        protected virtual Expression OnVisit(NotNull expression)
+        {
+            var operand = OnVisit(expression.Operand);
+            if (operand != expression.Operand)
+            {
+                return CopyTrivia(new NotNull(operand), expression);
+            }
+            return expression;
+        }
+
+        protected virtual Expression OnVisit(Negate expression)
+        {
+            var operand = OnVisit(expression.Operand);
+            if(operand != expression.Operand)
+            {
+                return CopyTrivia(new Negate(operand), expression);
+            }
+            return expression;
+        }
+
+        protected virtual Expression OnVisit(Positive expression)
+        {
+            var operand = OnVisit(expression.Operand);
+            if (operand != expression.Operand)
+            {
+                return CopyTrivia(new Positive(operand), expression);
+            }
+            return expression;
+        }
+
+        protected virtual Expression OnVisit(Not expression)
+        {
+            var operand = OnVisit(expression.Operand);
+            if (operand != expression.Operand)
+            {
+                return CopyTrivia(new Not(operand), expression);
+            }
+            return expression;
         }
 
         protected virtual Expression OnVisit(Binary expression)
@@ -58,6 +120,21 @@ namespace Parser
             throw new NotImplementedException();
         }
 
+        protected Expression CopyTrivia(Expression target, Expression source)
+        {
+            return target.WithTrivia(source);
+        }
+
+        protected virtual Expression OnVisit(Return expression)
+        {
+            var operand = OnVisit(expression);
+            if(operand != expression.Operand)
+            {
+                return CopyTrivia(new Return(operand), expression);
+            }
+            return expression;
+        }
+
         protected virtual Expression OnVisit(Constant expression)
         {
             return expression;
@@ -69,7 +146,7 @@ namespace Parser
             var right = OnVisit(expression.Right);
             if (left != expression.Left || right != expression.Right)
             {
-                return new Add(left, right, expression.Type);
+                return CopyTrivia(new Add(left, right, expression.Type), expression);
             }
             return expression;
         }
@@ -80,7 +157,7 @@ namespace Parser
             var right = OnVisit(expression.Right);
             if (left != expression.Left || right != expression.Right)
             {
-                return new Subtract(left, right, expression.Type);
+                return CopyTrivia(new Subtract(left, right, expression.Type), expression);
             }
             return expression;
         }
@@ -91,7 +168,7 @@ namespace Parser
             var right = OnVisit(expression.Right);
             if (left != expression.Left || right != expression.Right)
             {
-                return new Multiply(left, right, expression.Type);
+                return CopyTrivia(new Multiply(left, right, expression.Type), expression);
             }
             return expression;
         }
@@ -101,7 +178,7 @@ namespace Parser
             var right = OnVisit(expression.Right);
             if (left != expression.Left || right != expression.Right)
             {
-                return new Divide(left, right, expression.Type);
+                return CopyTrivia(new Divide(left, right, expression.Type), expression);
             }
             return expression;
         }
@@ -111,7 +188,7 @@ namespace Parser
             var right = OnVisit(expression.Right);
             if (left != expression.Left || right != expression.Right)
             {
-                return new Remainder(left, right, expression.Type);
+                return CopyTrivia(new Remainder(left, right, expression.Type), expression);
             }
             return expression;
         }
@@ -121,7 +198,7 @@ namespace Parser
             var right = OnVisit(expression.Right);
             if (left != expression.Left || right != expression.Right)
             {
-                return new Equal(left, right);
+                return CopyTrivia(new Equal(left, right), expression);
             }
             return expression;
         }
@@ -132,7 +209,7 @@ namespace Parser
             var right = OnVisit(expression.Right);
             if (left != expression.Left || right != expression.Right)
             {
-                return new NotEqual(left, right);
+                return CopyTrivia(new NotEqual(left, right), expression);
             }
             return expression;
         }
@@ -143,7 +220,7 @@ namespace Parser
 
             if (!body.SequenceEqual(expression.Statements))
             {
-                return new Block(expression.Scope, body);
+                return CopyTrivia(new Block(expression.Scope, body), expression);
             }
             return expression;
         }
@@ -154,7 +231,7 @@ namespace Parser
             var parameters = expression.Parameters.Select(OnVisit).Where(p => p != null).Cast<Variable>().ToArray();
             if (body != expression.Body || !parameters.SequenceEqual(expression.Parameters))
             {
-                return new Method(expression.ReturnType, expression.Name, body, expression.Scope, parameters);
+                return CopyTrivia(new Method(expression.ReturnType, expression.Name, body, expression.Scope, parameters), expression);
             }
             return expression;
         }
@@ -165,7 +242,7 @@ namespace Parser
 
             if (!body.SequenceEqual(expression.Body))
             {
-                return new CompilationUnit(expression.Scope, body);
+                return CopyTrivia(new CompilationUnit(expression.Scope, body), expression);
             }
 
             return expression;

@@ -62,26 +62,28 @@ namespace Parser
 
         private void SetupParsers()
         {
-            AddParser<If>(new Components.IfParser(this));
-            AddParser<Block>(new Components.BlockParser(this));
-            AddParser<Binary>(new Components.BinaryParser(this));
-            AddParser<Add>(new Components.AddParser(this));
-            AddParser<Assign>(new Components.AssignParser(this));
-            AddParser<Multiply>(new Components.MultiplyParser(this));
-            AddParser<Equal>(new Components.EqualParser(this));
-            AddParser<Constant>(new Components.ConstantParser(this));
-            AddParser<Method>(new Components.MethodParser(this));
-            AddParser<VariableDeclaration>(new Components.VariableDeclarationParser(this));
-            AddParser<Using>(new Components.UsingParser(this));
-            AddParser<Member>(new Components.MemberParser(this));
-            AddParser<CompilationUnit>(new Components.CompilationUnitParser(this));
-            AddParser<Parameter>(new Components.ParameterParser(this));
-            AddParser<DataType>(new Components.DataTypeParser(this));
-            AddParser<Call>(new Components.CallParser(this));
-            AddParser<Unary>(new Components.ParseUnary(this));
+            AddParser(new Components.IfParser(this));
+            AddParser(new Components.BlockParser(this));
+            AddParser(new Components.BinaryParser(this));
+            AddParser(new Components.AddParser(this));
+            AddParser(new Components.AssignParser(this));
+            AddParser(new Components.MultiplyParser(this));
+            AddParser(new Components.EqualParser(this));
+            AddParser(new Components.ConstantParser(this));
+            AddParser(new Components.MethodParser(this));
+            AddParser(new Components.VariableDeclarationParser(this));
+            AddParser(new Components.UsingParser(this));
+            AddParser(new Components.MemberParser(this));
+            AddParser(new Components.CompilationUnitParser(this));
+            AddParser(new Components.ParameterParser(this));
+            AddParser(new Components.DataTypeParser(this));
+            AddParser(new Components.CallParser(this));
+            AddParser(new Components.UnaryParser(this));
+            AddParser(new Components.ReturnParser(this));
         }
 
-        private void AddParser<TType>(Components.ParserComponent component)
+        private void AddParser<TType>(Components.ParserComponent<TType> component)
+            where TType : Expression
         {
             parsers.Add(typeof(TType), component);
         }
@@ -160,12 +162,12 @@ namespace Parser
 
         public IEnumerable<VariableTrivia> GetVariableTrivia(Variable variable)
         {
-            var realVariable = Variable.GetShadowedVariable(variable);
+            var realVariable = variable.GetVariableShadow();
             for (int i = scopeStack.Count - 1; i >= 0; --i)
             {
                 for (int j = scopeStack[i].Trivia.Count - 1; j >= 0; --j)
                 {
-                    if (scopeStack[i].Trivia[j] is VariableTrivia varTrivia && Variable.GetShadowedVariable(varTrivia.Variable) == realVariable)
+                    if (scopeStack[i].Trivia[j] is VariableTrivia varTrivia && varTrivia.Variable.GetVariableShadow() == realVariable)
                     {
                         yield return varTrivia;
                     }
@@ -191,7 +193,7 @@ namespace Parser
 
         public Scope CurrentScope => scopeStack[scopeStack.Count - 1];
 
-        public bool TryReadWhile(Func<int, bool> condition, Kind kind, out SyntaxNode value)
+        public bool TryReadWhile(Func<int, bool> condition, Kind kind, out SyntaxNode value, bool skipWhitespace = true)
         {
             SkipWhiteSpaceAndComments();
             var start = currentPosition;
@@ -220,6 +222,56 @@ namespace Parser
                         result.Append(Encoding.UTF32.GetChars(BitConverter.GetBytes(uncomittedBuffer[i])));
                     }
                     value = new SyntaxNode(result.ToString(), kind, start);
+                    AddSyntaxNode(value);
+                    Merge();
+                    currentPosition = pos;
+                    return true;
+                }
+            } while (true);
+        }
+
+        public bool TryReadInteger(out SyntaxNode value)
+        {
+            return TryReadWhile(c => Char.IsDigit((char)c), Kind.Literal, out value);
+        }
+
+        public bool TryReadHexadecimal(out SyntaxNode value)
+        {
+            var start = currentPosition;
+            Push();
+            var c = ReadChar();
+            if(c != '0' || ReadChar() != 'x' )
+            {
+                Pop();
+                value = null;
+                return false;
+            }
+            
+            var pos = currentPosition;
+            Push();
+
+            do
+            {
+                pos = currentPosition;
+                c = ReadChar();
+                if (Char.IsDigit((char)c) || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F' )
+                {
+                    continue;
+                }
+                else
+                {
+                    if (pos.Value == start.Value)
+                    {
+                        Pop();
+                        value = null;
+                        return false;
+                    }
+                    StringBuilder result = new StringBuilder();
+                    for (int i = start.Value; i < pos.Value; ++i)
+                    {
+                        result.Append(Encoding.UTF32.GetChars(BitConverter.GetBytes(uncomittedBuffer[i])));
+                    }
+                    value = new SyntaxNode(result.ToString(), Kind.Literal, start);
                     AddSyntaxNode(value);
                     Merge();
                     currentPosition = pos;

@@ -43,14 +43,14 @@ namespace Parser.Components
             var result = new Block(Parser.CurrentScope, statements.ToArray());
             foreach (var exp in statements)
             {
-                result.Trivia.AddRange(exp.Trivia);
+                result = result.WithTrivia(exp.Trivia);
             }
             return result;
         }
 
         private Expression ParseStatement()
         {
-            return Parser.Parse<VariableDeclaration>() ?? Parser.Parse<Assign>() ?? Parser.Parse<If>() ?? Parser.Parse<Method>() ?? Parser.Parse<Using>() ?? Parser.Parse<Call>();
+            return Parser.Parse<VariableDeclaration>() ?? Parser.Parse<Assign>() ?? Parser.Parse<If>() ?? Parser.Parse<Method>() ?? Parser.Parse<Using>() ?? Parser.Parse<Call>() ?? Parser.Parse<Return>();
         }
 
     }

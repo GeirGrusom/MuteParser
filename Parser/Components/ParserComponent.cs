@@ -12,9 +12,9 @@ namespace Parser.Components
             Parser = parser;
         }
 
-        public abstract Type Result { get; }
+        public abstract Type ResultType { get; }
 
-        protected Parser Parser { get; }
+        public Parser Parser { get; }
 
         public abstract Expression Parse();
 
@@ -37,6 +37,6 @@ namespace Parser.Components
         {
         }
 
-        public override Type Result => typeof(T);
+        public override Type ResultType => typeof(T);
     }
 }

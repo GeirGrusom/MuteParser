@@ -95,7 +95,9 @@
             }
 
             Parser.Merge();
-            return new If(condition, @true, @false, Parser.PopScopeStack());
+            var scope = Parser.PopScopeStack();
+            var result = new If(condition, @true, @false, scope).WithTrivia(scope);
+            return result;
         }
     }
 }

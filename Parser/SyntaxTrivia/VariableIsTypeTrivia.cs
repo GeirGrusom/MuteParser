@@ -13,7 +13,17 @@ namespace Parser.SyntaxTrivia
 
         public bool Equals(VariableIsTypeTrivia other)
         {
-            return Variable.GetShadowedVariable(other.Variable) == Variable.GetShadowedVariable(Variable) && Type.Equals(other.Type);
+            return other.Variable.GetVariableShadow() == Variable.GetVariableShadow() && Type.Equals(other.Type);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is VariableIsTypeTrivia trivia && Equals(trivia);
+        }
+
+        public override int GetHashCode()
+        {
+            return Type.GetHashCode() ^ Variable.GetHashCode() * 8191;
         }
     }
 }

@@ -50,15 +50,37 @@ namespace Parser.Components
 
                 switch (id.Value)
                 {
+                    case "null":
+                        {
+                            if(isNullable)
+                            {
+                                Parser.SyntaxError("Cannot make null values nullable", id.Position);
+                            }
+                            typeResult = Types.Null;
+                            break;
+                        }
                     case "void":
                         {
                             if (isArray)
                             {
-                                Parser.SyntaxError("Cannot make void arrays");
+                                Parser.SyntaxError("Cannot make void arrays", id.Position);
                             }
                             if (isNullable)
                             {
-                                Parser.SyntaxError("Void cannot be nullable");
+                                Parser.SyntaxError("Void cannot be nullable", id.Position);
+                            }
+                            typeResult = Types.Void;
+                            break;
+                        }
+                    case "never":
+                        {
+                            if(isArray)
+                            {
+                                Parser.SyntaxError("Cannot make arrays of never return types");
+                            }
+                            if(isNullable)
+                            {
+                                Parser.SyntaxError("Never cannot be nullable - it has not value");
                             }
                             typeResult = Types.Void;
                             break;

@@ -6,9 +6,9 @@ using Parser.SyntaxNodes;
 
 namespace Parser.Components
 {
-    public sealed class ParseUnary : ParserComponent<Unary>
+    public sealed class UnaryParser : ParserComponent<Unary>
     {
-        public ParseUnary(Parser parser) : base(parser)
+        public UnaryParser(Parser parser) : base(parser)
         {
         }
 

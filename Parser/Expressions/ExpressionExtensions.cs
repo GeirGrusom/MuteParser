@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+﻿using Parser.SyntaxTrivia;
+using System.Collections.Generic;
+using System.Reflection;
 
 namespace Parser.Expressions
 {
@@ -27,6 +29,36 @@ namespace Parser.Expressions
                 }
             }
             return false;
+        }
+
+        public static TExpression WithTrivia<TExpression>(this TExpression expression, Expression source)
+            where TExpression : Expression
+        {
+            foreach (var trivia in source.Trivia)
+            {
+                expression.Trivia.Add(trivia);
+            }
+            return expression;
+        }
+
+        public static TExpression WithTrivia<TExpression>(this TExpression expression, Scope source)
+            where TExpression : Expression
+        {
+            foreach (var trivia in source.Trivia)
+            {
+                expression.Trivia.Add(trivia);
+            }
+            return expression;
+        }
+
+        public static TExpression WithTrivia<TExpression>(this TExpression expression, IEnumerable<Trivia> source)
+            where TExpression : Expression
+        {
+            foreach (var trivia in source)
+            {
+                expression.Trivia.Add(trivia);
+            }
+            return expression;
         }
     }
 }

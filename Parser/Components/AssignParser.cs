@@ -52,12 +52,19 @@
                         {
                             Parser.SyntaxError($"Cannot assign expression of type {rhs.Type} to {variable.Type}.", assignmentOpNode.Position);
                         }
+                        else
+                        {
+                            if(lhs.Type != rhs.Type)
+                            {
+                                Parser.Shadow(variable, rhs.Type);
+                            }
+                        }
 
                         var assigned = new VariableAssignedTrivia(variable);
                         Parser.CurrentScope.Trivia.Add(assigned);
                         result.Trivia.Add(assigned);
-                        result.Trivia.AddRange(lhs.Trivia);
-                        result.Trivia.AddRange(rhs.Trivia);
+                        result = result.WithTrivia(lhs);
+                        result = result.WithTrivia(rhs);
                     }
                     return result;
                 }
