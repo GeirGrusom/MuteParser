@@ -33,15 +33,15 @@ namespace Parser
 
             foreach (var node in nodes)
             {
-                if(node.Kind == Kind.Keyword)
+                if (node.Kind == Kind.Keyword)
                 {
                     Console.ForegroundColor = ConsoleColor.Blue;
                 }
-                else if(node.Kind == Kind.Literal || node.Kind == Kind.StringStart || node.Kind == Kind.StringContents || node.Kind == Kind.StringEnd)
+                else if (node.Kind == Kind.Literal || node.Kind == Kind.StringStart || node.Kind == Kind.StringContents || node.Kind == Kind.StringEnd)
                 {
                     Console.ForegroundColor = ConsoleColor.White;
                 }
-                else if(node.Kind == Kind.TypeNullable || node.Kind == Kind.ArrayNullable || node.Kind == Kind.TupleNullable || node.Kind == Kind.UnionNullable)
+                else if (node.Kind == Kind.TypeNullable || node.Kind == Kind.ArrayNullable || node.Kind == Kind.TupleNullable || node.Kind == Kind.UnionNullable)
                 {
                     Console.ForegroundColor = ConsoleColor.White;
                 }
@@ -49,9 +49,9 @@ namespace Parser
                 {
                     Console.ForegroundColor = ConsoleColor.Gray;
                 }
-                for(int i = 0; i < node.Value.Length; ++i)
+                for (int i = 0; i < node.Value.Length; ++i)
                 {
-                    if(node.Value[i] == '\n')
+                    if (node.Value[i] == '\n')
                     {
                         IncrementLineNumber();
                     }
@@ -68,10 +68,11 @@ namespace Parser
         static void Main(string[] args)
         {
 
-            string c = 
-@"main(args: string[]?) 
+            string c =
+@"main(args: string[]?)
 {
-    let def: i32? <- 100
+    var def: i32? <- 100
+
     if(def != null)
     {
         let ghi : i32 <- def
@@ -82,25 +83,25 @@ namespace Parser
     }
     let foobar <- 100 + -10
 
-    def.ToString(!?""Hello \""World!\""\n"")
+    def.ToString(""Hello \""World!\""\n""!!)
 }
 ";
 
             var stream = new MemoryStream(Encoding.UTF8.GetBytes(c));
-            var references = new References(new [] { typeof(System.String).Assembly });
+            var references = new References(new[] { typeof(System.String).Assembly });
 
             var parser = new Parser(references, stream);
-            
+
             var res = parser.Parse();
 
             PrintSyntaxNodes(parser.GetSyntaxNodes());
 
-            if(parser.SyntaxErrors.Count != 0)
+            if (parser.SyntaxErrors.Count != 0)
             {
                 Console.WriteLine("Parsing failed");
             }
 
-            foreach(var err in parser.SyntaxErrors)
+            foreach (var err in parser.SyntaxErrors)
             {
                 Console.WriteLine(GetLine(c, err.Position.Value));
                 Console.Write(new string('-', err.Position.Column - 1));
@@ -128,9 +129,9 @@ namespace Parser
 
         private static int FindLineStart(string text, int start)
         {
-            for(int i = start; i >= 0; --i)
+            for (int i = start; i >= 0; --i)
             {
-                if(text[i] == '\n')
+                if (text[i] == '\n')
                 {
                     return i + 1;
                 }

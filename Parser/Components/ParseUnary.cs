@@ -15,7 +15,7 @@ namespace Parser.Components
         public override Expression Parse()
         {
             Parser.Push();
-            if(Parser.TryReadVerbatim(Kind.Operator, out var parensStart, '('))
+            if (Parser.TryReadVerbatim(Kind.Operator, out var parensStart, '('))
             {
                 var operand = Parser.Parse<Binary>();
                 if (!Parser.TryReadVerbatim(Kind.Operator, out var parensEnd, ')'))
@@ -27,21 +27,11 @@ namespace Parser.Components
                 Parser.Merge();
                 return operand;
             }
-            if(Parser.TryReadVerbatim(Kind.Operator, out var notNullNode, "!?"))
+            if (Parser.TryReadVerbatim(Kind.Operator, out var opNode, '+', '-', '!'))
             {
                 var operand = Parser.Parse<Unary>();
                 Parser.Merge();
-                if(!operand.Type.Nullable)
-                {
-                    Parser.SyntaxError("Operand is already non-nullable", notNullNode.Position);
-                }
-                return new NotNull(operand);
-            }
-            if(Parser.TryReadVerbatim(Kind.Operator, out var opNode, '+', '-', '!'))
-            {
-                var operand = Parser.Parse<Unary>();
-                Parser.Merge();
-                switch(opNode.Value)
+                switch (opNode.Value)
                 {
                     case "+":
                         return new Positive(operand);
@@ -53,7 +43,19 @@ namespace Parser.Components
                 throw new NotSupportedException();
             }
             Parser.Pop();
-            return Parser.Parse<Constant>();
+
+            var lhs = Parser.Parse<Constant>();
+
+            if (Parser.TryReadVerbatim(Kind.Operator, out var opNotNull, "!!"))
+            {
+                Parser.Merge();
+                if (!lhs.Type.Nullable)
+                {
+                    Parser.SyntaxError("Operand is already non-nullable", opNotNull.Position);
+                }
+                return new NotNull(lhs);
+            }
+            return lhs;
         }
     }
 }
