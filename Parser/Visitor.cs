@@ -58,6 +58,40 @@ namespace Parser
 
         }
 
+        protected virtual Expression OnVisit(Logical expression)
+        {
+            switch(expression)
+            {
+                case AndAlso and:
+                    return OnVisit(and);
+                case OrElse or:
+                    return OnVisit(or);
+            }
+            throw new NotImplementedException();
+        }
+
+        protected virtual Expression OnVisit(AndAlso expression)
+        {
+            var left = OnVisit(expression.Left);
+            var right = OnVisit(expression.Right);
+            if (left != expression.Left || right != expression.Right)
+            {
+                return CopyTrivia(new AndAlso(left, right), expression);
+            }
+            return expression;
+        }
+
+        protected virtual Expression OnVisit(OrElse expression)
+        {
+            var left = OnVisit(expression.Left);
+            var right = OnVisit(expression.Right);
+            if (left != expression.Left || right != expression.Right)
+            {
+                return CopyTrivia(new OrElse(left, right), expression);
+            }
+            return expression;
+        }
+
         protected virtual Expression OnVisit(NotNull expression)
         {
             var operand = OnVisit(expression.Operand);
@@ -116,6 +150,8 @@ namespace Parser
                     return OnVisit(equal);
                 case NotEqual notEqual:
                     return OnVisit(notEqual);
+                case Logical logical:
+                    return OnVisit(logical);
             }
             throw new NotImplementedException();
         }

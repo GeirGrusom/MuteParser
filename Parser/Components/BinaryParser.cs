@@ -11,7 +11,15 @@ namespace Parser.Components
 
         public override Expression Parse()
         {
-            return Parser.Parse<Equal>();
+            var pos = Parser.CurrentPosition;
+            var result = Parser.Parse<Logical>();
+
+            if(result is Binary bin && (bin.Left is null || bin.Right is null))
+            {
+                Parser.SyntaxError("Expected expression", pos);
+            }
+
+            return result;
         }
     }
 }

@@ -69,5 +69,36 @@ namespace Parser.Tests.Components
             // Assert
             Assert.That(result.Trivia, Has.No.InstanceOf<VariableAssignedTrivia>());
         }
+
+        [Test]
+        public void IfTrue_NullCheck_AndAlso_ProducesNotNullTrivia()
+        {
+            // Arrange
+            var variableA = new Variable("a", false, Types.GetTypeShim(typeof(string), true));
+            var variableB = new Variable("b", false, Types.GetTypeShim(typeof(string), true));
+            var ifParser = CreateParser<IfParser>("if a != null && b != null { } else { }", variableA, variableB);
+
+            // Act
+            var result = (If)ifParser.Parse();
+
+            // Assert
+            Assert.That(result.True.Trivia, Has.One.EqualTo(new VariableIsNotNullTrivia(variableA)));
+            Assert.That(result.True.Trivia, Has.One.EqualTo(new VariableIsNotNullTrivia(variableB)));
+        }
+
+        [Test]
+        public void IfTrue_NullCheck_Not_ProducesNotNullTrivia()
+        {
+            // Arrange
+            var variableA = new Variable("a", false, Types.GetTypeShim(typeof(string), true));
+            //var variableB = new Variable("b", false, Types.GetTypeShim(typeof(string), true));
+            var ifParser = CreateParser<IfParser>("if !(a = null) { } else { }", variableA);
+
+            // Act
+            var result = (If)ifParser.Parse();
+
+            // Assert
+            Assert.That(result.True.Trivia, Has.One.EqualTo(new VariableIsNotNullTrivia(variableA)));
+        }
     }
 }

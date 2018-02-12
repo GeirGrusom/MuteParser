@@ -70,6 +70,14 @@
                 return null;
             }
 
+            foreach(var trivia in condition.Trivia)
+            {
+                if (trivia is VariableIsNullTrivia || trivia is VariableIsNotNullTrivia || trivia is VariableIsTypeTrivia)
+                {
+                    @true.Trivia.Add(trivia);
+                }
+            }
+
             Expression @false = null;
             if (Parser.TryReadVerbatim(Kind.Keyword, out var elseNode, "else"))
             {
@@ -78,6 +86,18 @@
 
             if (@false != null)
             {
+                foreach (var trivia in condition.Trivia)
+                {
+                    if (trivia is VariableIsNullTrivia isNullTrivia)
+                    {
+                        @false.Trivia.Add(new VariableIsNotNullTrivia(isNullTrivia.Variable));
+                    }
+                    else if(trivia is VariableIsNotNullTrivia isNotNullTrivia)
+                    {
+                        @false.Trivia.Add(new VariableIsNullTrivia(isNotNullTrivia.Variable));
+                    }
+                }
+
                 foreach (var trueTrivia in @true.Trivia)
                 {
                     foreach (var falseTrivia in @false.Trivia)

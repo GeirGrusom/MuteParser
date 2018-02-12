@@ -80,6 +80,7 @@ namespace Parser
             AddParser(new Components.CallParser(this));
             AddParser(new Components.UnaryParser(this));
             AddParser(new Components.ReturnParser(this));
+            AddParser(new Components.LogicalParser(this));
         }
 
         private void AddParser<TType>(Components.ParserComponent<TType> component)

@@ -55,11 +55,23 @@ namespace Parser.Expressions
             return Constant.False;
         }
 
+        protected override Expression OnVisit(Unary expression)
+        {
+            if (Other is Unary otherUnary)
+            {
+                if (expression.GetType() == Other.GetType())
+                {
+                    return Test(otherUnary.Operand, expression.Operand);
+                }
+            }
+            return Constant.False;
+        }
+
         protected override Expression OnVisit(Binary expression)
         {
             if (Other is Binary otherBinary)
             {
-                if (expression.Left?.GetType() != expression.Right?.GetType())
+                if (expression.Left?.GetType() != otherBinary.Left?.GetType() || expression.Right?.GetType() != otherBinary.Right?.GetType())
                 {
                     return Constant.False;
                 }

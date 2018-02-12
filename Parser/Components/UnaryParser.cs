@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Parser.Expressions;
 using Parser.SyntaxNodes;
+using Parser.SyntaxTrivia;
 
 namespace Parser.Components
 {
@@ -29,7 +30,14 @@ namespace Parser.Components
             }
             if (Parser.TryReadVerbatim(Kind.Operator, out var opNode, '+', '-', '!'))
             {
+                var operandPos = Parser.CurrentPosition;
                 var operand = Parser.Parse<Unary>();
+
+                if(operand is null)
+                {
+                    Parser.SyntaxError("Expected expression", operandPos);
+                }
+
                 Parser.Merge();
                 switch (opNode.Value)
                 {
@@ -38,16 +46,33 @@ namespace Parser.Components
                     case "-":
                         return new Negate(operand);
                     case "!":
-                        return new Not(operand);
+                        var result = new Not(operand);
+                        foreach(var trivia in operand.Trivia)
+                        {
+                            if(trivia is VariableIsNotNullTrivia notNullTrivia )
+                            {
+                                result.Trivia.Add(new VariableIsNullTrivia(notNullTrivia.Variable));
+                            }
+                            else if(trivia is VariableIsNullTrivia nullTrivia)
+                            {
+                                result.Trivia.Add(new VariableIsNotNullTrivia(nullTrivia.Variable));
+                            }
+                        }
+                        return result;
                 }
                 throw new NotSupportedException();
             }
             Parser.Pop();
-
+            var pos = Parser.CurrentPosition;
             var lhs = Parser.Parse<Constant>();
 
             if (Parser.TryReadVerbatim(Kind.Operator, out var opNotNull, "!!"))
             {
+                if (lhs is null)
+                {
+                    Parser.SyntaxError("Expected expression", pos);
+                }
+
                 Parser.Merge();
                 if (!lhs.Type.Nullable)
                 {
