@@ -67,6 +67,58 @@ namespace Parser.Expressions
             return Constant.False;
         }
 
+        protected override Expression OnVisit(IndexDereference expression)
+        {
+            if(Other is IndexDereference otherDeref)
+            {
+                if(expression.Operand?.GetType() != otherDeref.Operand?.GetType() && Test(otherDeref.Operand, expression.Operand) == Constant.False)
+                {
+                    return Constant.False;
+                }
+                if(otherDeref.Indices.Length != expression.Indices.Length)
+                {
+                    return Constant.False;
+                }
+                for(int i = 0; i < expression.Indices.Length; ++i)
+                {
+                    if(Test(otherDeref.Indices[i], expression.Indices[i]) == Constant.False)
+                    {
+                        return Constant.False;
+                    }
+                }
+                return Constant.True;
+            }
+            else
+            {
+                return Constant.False;
+            }
+        }
+
+        protected override Expression OnVisit(Array expression)
+        {
+            if(Other is Array otherArray)
+            {
+                if(!expression.Type.Equals(expression.Type) || expression.Expressions.Length != otherArray.Expressions.Length)
+                {
+                    return Constant.False;
+                }
+
+                for(int i = 0; i < expression.Expressions.Length; ++i)
+                {
+                    if(Test(otherArray.Expressions[i], expression.Expressions[i]) == Constant.False)
+                    {
+                        return Constant.False;
+                    }
+                }
+
+                return Constant.True;
+            }
+            else
+            {
+                return Constant.False;
+            }
+        }
+
         protected override Expression OnVisit(Binary expression)
         {
             if (Other is Binary otherBinary)

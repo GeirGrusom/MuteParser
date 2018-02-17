@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Parser.Expressions;
+using Parser.SyntaxNodes;
 
 namespace Parser.Components
 {
@@ -13,7 +14,21 @@ namespace Parser.Components
 
         public override Expression Parse()
         {
-            throw new NotImplementedException();
+            var lhs = Parser.Parse<Equal>();
+
+            if (Parser.TryReadVerbatim(Kind.Operator, out var op, '&'))
+            {
+                var rhs = Parser.Parse<AndAlso>();
+                if (rhs == null)
+                {
+                    return lhs;
+                }
+                return new AndAlso(lhs, rhs);
+            }
+            else
+            {
+                return lhs;
+            }
         }
     }
 }

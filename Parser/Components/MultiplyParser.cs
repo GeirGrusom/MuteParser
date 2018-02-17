@@ -1,8 +1,6 @@
 ﻿using Parser.Expressions;
 using Parser.SyntaxNodes;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Parser.Components
 {

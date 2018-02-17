@@ -4,9 +4,9 @@ using System.Text;
 
 namespace Parser.Expressions
 {
-    public sealed class Positive : Unary
+    public sealed class Plus : Unary
     {
-        public Positive(Expression operand) : base(operand)
+        public Plus(Expression operand) : base(operand)
         {
         }
 

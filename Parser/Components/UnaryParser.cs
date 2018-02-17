@@ -16,18 +16,7 @@ namespace Parser.Components
         public override Expression Parse()
         {
             Parser.Push();
-            if (Parser.TryReadVerbatim(Kind.Operator, out var parensStart, '('))
-            {
-                var operand = Parser.Parse<Binary>();
-                if (!Parser.TryReadVerbatim(Kind.Operator, out var parensEnd, ')'))
-                {
-                    Parser.SyntaxError("Expected ')'");
-                    Parser.Pop();
-                    return null;
-                }
-                Parser.Merge();
-                return operand;
-            }
+            
             if (Parser.TryReadVerbatim(Kind.Operator, out var opNode, '+', '-', '!'))
             {
                 var operandPos = Parser.CurrentPosition;
@@ -42,9 +31,9 @@ namespace Parser.Components
                 switch (opNode.Value)
                 {
                     case "+":
-                        return new Positive(operand);
+                        return new Plus(operand);
                     case "-":
-                        return new Negate(operand);
+                        return new Minus(operand);
                     case "!":
                         var result = new Not(operand);
                         foreach(var trivia in operand.Trivia)
@@ -79,6 +68,40 @@ namespace Parser.Components
                     Parser.SyntaxError("Operand is already non-nullable", opNotNull.Position);
                 }
                 return new NotNull(lhs);
+            }
+
+            else if (Parser.TryReadVerbatim(Kind.StartArray, out var opArrayStart, '['))
+            {
+                if (!(lhs.Type is ArrayTypeShim arrayTypeShim))
+                {
+                    Parser.SyntaxError("The left hand expression is not a array type.");
+                }
+                else
+                {
+                    var indices = new List<Expression>();
+                    while (true)
+                    {
+                        var operand = Parser.Parse<Binary>();
+
+                        indices.Add(operand);
+
+                        if (Parser.TryReadVerbatim(Kind.EndArray, out var opArrayEnd, ']'))
+                        {
+                            break;
+                        }
+                        if (!Parser.TryReadVerbatim(Kind.ArraySeparator, out var sep, ','))
+                        {
+                            Parser.SyntaxError("Expected ',' or ']'");
+                        }
+                    }
+
+                    if (indices.Count != arrayTypeShim.Dimensions.Length)
+                    {
+                        Parser.SyntaxError($"The array has {arrayTypeShim.Dimensions.Length} dimensions, but {indices.Count} were specified.");
+                    }
+
+                    return new IndexDereference(lhs, indices);
+                }
             }
             return lhs;
         }

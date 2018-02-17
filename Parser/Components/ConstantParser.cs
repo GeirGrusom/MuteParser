@@ -2,6 +2,8 @@
 {
     using Expressions;
     using SyntaxNodes;
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Text;
 
     public sealed class ConstantParser : ParserComponent<Constant>
@@ -59,7 +61,6 @@
                 return new Constant(int.Parse(value.Value), Types.Int);
             }
             Parser.Push();
-
             if(Parser.TryReadVerbatim(Kind.StringStart, out var stringStartNode, '"'))
             {
                 var nodeContents = new StringBuilder();
@@ -116,6 +117,39 @@
                     lastPos = Parser.CurrentPosition;
                 }
             }
+
+            if(Parser.TryReadVerbatim(Kind.StartArray, out var arrStart, '['))
+            {
+                var elements = new List<Expression>();
+                while(true)
+                {
+                    var item = Parser.Parse<Binary>();
+                    elements.Add(item);
+                    if(Parser.TryReadVerbatim(Kind.EndArray, out var endNode, ']'))
+                    {
+                        break;
+                    }
+
+                    if(!Parser.TryReadVerbatim(Kind.ArraySeparator, out var sepNode, ','))
+                    {
+                        Parser.SyntaxError("Expected ',' or ']'");
+                    }
+                }
+
+                TypeShim resultType;
+
+                if(Parser.TryReadVerbatim(Kind.Operator, out var typeNode, ':'))
+                {
+                    resultType = Parser.Parse<DataType>().Type;
+                }
+                else
+                {
+                    resultType = new ArrayTypeShim(new[] { 1 }, elements[0].Type, elements.Any(x => x.Type == Types.Null));
+                }
+                Parser.Merge();
+                return new Array(elements, (ArrayTypeShim)resultType);
+            }
+
             return Parser.Parse<Call>();
         }
     }

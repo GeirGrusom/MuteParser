@@ -28,6 +28,8 @@ namespace Parser
                     return OnVisit(compilationUnit);
                 case Constant constant:
                     return OnVisit(constant);
+                case Array array:
+                    return OnVisit(array);
                 case Binary bin:
                     return OnVisit(bin);
                 case Unary unary:
@@ -38,13 +40,49 @@ namespace Parser
 
         }
 
+        protected virtual Expression OnVisit(Array expression)
+        {
+            var operands = expression.Expressions.Select(OnVisit).ToArray();
+
+            for(int i = 0; i < expression.Expressions.Length; ++i)
+            {
+                if(operands[i] != expression.Expressions[i])
+                {
+                    return new Array(operands, (ArrayTypeShim)expression.Type);
+                }
+            }
+            return expression;
+        }
+
+        protected virtual Expression OnVisit(IndexDereference expression)
+        {
+            var operand = OnVisit(expression.Operand);
+
+            var indices = expression.Indices.Select(OnVisit).ToArray();
+
+            if(operand != expression.Operand)
+            {
+                return new IndexDereference(operand, indices);
+            }
+
+            for (int i = 0; i < expression.Indices.Length; ++i)
+            {
+                if (indices[i] != expression.Indices[i])
+                {
+                    return new IndexDereference(operand, indices);
+                }
+            }
+
+            return expression;
+        }
+
         protected virtual Expression OnVisit(Unary expression)
         {
             switch(expression)
             {
-                case Negate negate:
+                case Minus negate:
                     return OnVisit(negate);
-                case Positive positive:
+                case Plus positive:
                     return OnVisit(positive);
                 case Not not:
                     return OnVisit(not);
@@ -52,6 +90,8 @@ namespace Parser
                     return OnVisit(ret);
                 case NotNull notNull:
                     return OnVisit(notNull);
+                case IndexDereference deref:
+                    return OnVisit(deref);
                 default:
                     throw new NotImplementedException();
             }
@@ -102,22 +142,22 @@ namespace Parser
             return expression;
         }
 
-        protected virtual Expression OnVisit(Negate expression)
+        protected virtual Expression OnVisit(Minus expression)
         {
             var operand = OnVisit(expression.Operand);
             if(operand != expression.Operand)
             {
-                return CopyTrivia(new Negate(operand), expression);
+                return CopyTrivia(new Minus(operand), expression);
             }
             return expression;
         }
 
-        protected virtual Expression OnVisit(Positive expression)
+        protected virtual Expression OnVisit(Plus expression)
         {
             var operand = OnVisit(expression.Operand);
             if (operand != expression.Operand)
             {
-                return CopyTrivia(new Positive(operand), expression);
+                return CopyTrivia(new Plus(operand), expression);
             }
             return expression;
         }
