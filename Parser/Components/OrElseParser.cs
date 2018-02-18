@@ -1,7 +1,6 @@
 ﻿using Parser.Expressions;
-using System;
+using Parser.SyntaxTrivia;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Parser.Components
 {
@@ -18,7 +17,11 @@ namespace Parser.Components
             if (Parser.TryReadVerbatim(SyntaxNodes.Kind.Operator, out var op, "|"))
             {
                 var rhs = Parser.Parse<OrElse>();
-                return new OrElse(lhs, rhs);
+
+                var trivia = new HashSet<Trivia>(lhs.Trivia);
+                trivia.IntersectWith(rhs.Trivia);
+
+                return new OrElse(lhs, rhs).WithTrivia(trivia);
             }
             else
             {

@@ -23,7 +23,7 @@ namespace Parser.Components
                 {
                     return lhs;
                 }
-                return new AndAlso(lhs, rhs);
+                return new AndAlso(lhs, rhs).WithTrivia(lhs.Trivia).WithTrivia(rhs.Trivia);
             }
             else
             {

@@ -76,7 +76,7 @@ namespace Parser.Tests.Components
             // Arrange
             var variableA = new Variable("a", false, Types.GetTypeShim(typeof(string), true));
             var variableB = new Variable("b", false, Types.GetTypeShim(typeof(string), true));
-            var ifParser = CreateParser<IfParser>("if a != null && b != null { } else { }", variableA, variableB);
+            var ifParser = CreateParser<IfParser>("if a != null & b != null { } else { }", variableA, variableB);
 
             // Act
             var result = (If)ifParser.Parse();

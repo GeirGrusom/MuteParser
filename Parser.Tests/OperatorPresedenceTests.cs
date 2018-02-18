@@ -11,29 +11,18 @@ namespace Parser.Tests
     using global::Parser.Expressions;
     using global::Parser.Components;
     using static Components.ComponentHelper;
+    using global::Parser.Tests.Components;
 
     [TestFixture]
     public class OperatorPresedenceTests
     {
         private static Constant True = Constant.True;
+        private static Constant False = Constant.False;
         private static Constant One = new Constant(1, Types.Int);
-
-        [Test]
-        public void Logical_Ok()
-        {
-            // Arrange
-            var parser = CreateParser<BinaryParser>("true = false && true = true");
-            var expectedResult = new AndAlso(new Equal(Constant.True, Constant.False), new Equal(Constant.True, Constant.True));
-
-            // Act
-            var result = parser.Parse();
-
-            // Assert
-            Assert.That(result, ExpressionIs.EqualTo(expectedResult));
-        }
 
         public static readonly object[][] TestCases = new object[][]
         {
+            new object[] { "true = false & true = true", new AndAlso(new Equal(True, False), new Equal(True, True))},
             new object[] { "true | true & true", new OrElse(True, new AndAlso(True, True)) },
             new object[] { "true & true | true", new OrElse(new AndAlso(True, True), True) },
             new object[] { "true = true & true = true", new AndAlso(new Equal(True, True), new Equal(True, True))},
@@ -58,6 +47,7 @@ namespace Parser.Tests
 
             // Assert
             Assert.That(result, ExpressionIs.EqualTo(expectedResult));
+            parser.AssertStackIsEmpty();
         }
     }
 }

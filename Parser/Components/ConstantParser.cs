@@ -103,10 +103,7 @@
                         }
                         else if(ch == '"')
                         {
-                            Parser.AddSyntaxNode(new SyntaxNode(nodeContents.ToString(), Kind.StringContents, startPos));
-                            Parser.AddSyntaxNode(new SyntaxNode("\"", Kind.StringEnd, lastPos));
-                            Parser.Merge();
-                            return new Constant(contents.ToString(), Types.String);
+                            break;
                         }
                         else
                         {
@@ -116,9 +113,13 @@
                     }
                     lastPos = Parser.CurrentPosition;
                 }
+                Parser.AddSyntaxNode(new SyntaxNode(nodeContents.ToString(), Kind.StringContents, startPos));
+                Parser.AddSyntaxNode(new SyntaxNode("\"", Kind.StringEnd, lastPos));
+                Parser.Merge();
+                return new Constant(contents.ToString(), Types.String);
             }
 
-            if(Parser.TryReadVerbatim(Kind.StartArray, out var arrStart, '['))
+            if (Parser.TryReadVerbatim(Kind.StartArray, out var arrStart, '['))
             {
                 var elements = new List<Expression>();
                 while(true)
@@ -149,6 +150,8 @@
                 Parser.Merge();
                 return new Array(elements, (ArrayTypeShim)resultType);
             }
+
+            Parser.Pop();
 
             return Parser.Parse<Call>();
         }
