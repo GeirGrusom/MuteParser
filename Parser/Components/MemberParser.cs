@@ -15,23 +15,24 @@ namespace Parser.Components
 
         public override Expression Parse()
         {
-            Parser.Push();
-            if (Parser.TryReadIdentifier(out var id))
+            using (var stack = Parser.Push())
             {
-                var lhs = Parser.FindVariable(id.Value) ?? (Expression)new UnresolvedIdentifier(id.Value);
-                var res = Parse(lhs);
-                if (res == null)
+                if (Parser.TryReadIdentifier(out var id))
                 {
-                    Parser.Merge();
-                    return lhs;
+                    var lhs = Parser.FindVariable(id.Value) ?? (Expression)new UnresolvedIdentifier(id.Value);
+                    var res = Parse(lhs);
+                    if (res == null)
+                    {
+                        stack.Merge();
+                        return lhs;
+                    }
+                    stack.Merge();
+                    return res;
                 }
-                Parser.Merge();
-                return res;
-            }
-            else
-            {
-                Parser.Pop();
-                return null;
+                else
+                {
+                    return null;
+                }
             }
         }
 

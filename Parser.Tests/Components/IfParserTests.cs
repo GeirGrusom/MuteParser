@@ -87,6 +87,20 @@ namespace Parser.Tests.Components
         }
 
         [Test]
+        public void VariableNotEqual()
+        {
+            // Arrange
+            var variableA = new Variable("a", false, Types.GetTypeShim(typeof(string), true));
+            var ifParser = CreateParser<EqualParser>("a != null", variableA);
+
+            // Act
+            var result = (NotEqual)ifParser.Parse();
+
+            // Assert
+            Assert.That(result, ExpressionIs.EqualTo(new NotEqual(variableA, Constant.Null)));
+        }
+
+        [Test]
         public void IfTrue_NullCheck_Not_ProducesNotNullTrivia()
         {
             // Arrange

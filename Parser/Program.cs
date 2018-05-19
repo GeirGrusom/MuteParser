@@ -71,19 +71,19 @@ namespace Parser
             string c =
 @"main(args: string[]?)
 {
-    var def: i32? <- 100
+    var def: i32? <- 100;
 
     if(def != null)
     {
-        let ghi : i32 <- def
+        let ghi : i32 <- def;
     }
     else
     {
-        let abc : i32 <- def
+        let abc : i32 <- def;
     }
-    let foobar <- 100 + -10
+    let foobar <- 100 + -10;
 
-    def.ToString(""Hello \""World!\""\n""!!)
+    def.ToString(""Hello \""World!\""\n""!!);
 }
 ";
 

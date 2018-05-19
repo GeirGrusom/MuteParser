@@ -34,10 +34,17 @@ namespace Parser
                     return OnVisit(bin);
                 case Unary unary:
                     return OnVisit(unary);
+                case Variable variable:
+                    return OnVisit(variable);
                 default:
                     throw new NotImplementedException();
             }
 
+        }
+
+        protected virtual Expression OnVisit(Variable variable)
+        {
+            return variable;
         }
 
         protected virtual Expression OnVisit(Array expression)

@@ -14,28 +14,28 @@ namespace Parser.Components
 
         public override Expression Parse()
         {
-            Parser.Push();
-
-            if (Parser.TryReadVerbatim(Kind.Keyword, out var usingNode, "using"))
+            using (var stack = Parser.Push())
             {
-                var resultNamespace = new List<string>();
-
-                while (Parser.TryReadIdentifier(out var nsId))
+                if (Parser.TryReadVerbatim(Kind.Keyword, out var usingNode, "using"))
                 {
-                    resultNamespace.Add(nsId.Value);
+                    var resultNamespace = new List<string>();
 
-                    if (!Parser.TryReadVerbatim(Kind.MemberSeparator, out var memberSepNode, '.'))
+                    while (Parser.TryReadIdentifier(out var nsId))
                     {
-                        break;
+                        resultNamespace.Add(nsId.Value);
+
+                        if (!Parser.TryReadVerbatim(Kind.MemberSeparator, out var memberSepNode, '.'))
+                        {
+                            break;
+                        }
                     }
+                    stack.Merge();
+                    return new Using(resultNamespace);
                 }
-                Parser.Merge();
-                return new Using(resultNamespace);
-            }
-            else
-            {
-                Parser.Pop();
-                return null;
+                else
+                {
+                    return null;
+                }
             }
         }
     }

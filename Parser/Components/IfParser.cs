@@ -15,14 +15,11 @@
 
         public override Expression Parse()
         {
-            Parser.Push();
-            Parser.PushScopeStack();
             if (!Parser.TryReadVerbatim(Kind.Keyword, out var ifNode, "if"))
             {
-                Parser.PopScopeStack();
-                Parser.Pop();
                 return null;
             }
+            Parser.PushScopeStack();
 
             var condition = Parser.Parse<Binary>();
 
@@ -30,8 +27,6 @@
             {
                 Parser.SyntaxError("Expected expression");
                 Parser.PopScopeStack();
-                Parser.Pop();
-                
                 return null;
             }
 
@@ -65,12 +60,11 @@
             if (@true == null)
             {
                 Parser.PopScopeStack();
-                Parser.Pop();
                 Parser.SyntaxError("Expected block expression");
                 return null;
             }
 
-            foreach(var trivia in condition.Trivia)
+            foreach (var trivia in condition.Trivia)
             {
                 if (trivia is VariableIsNullTrivia || trivia is VariableIsNotNullTrivia || trivia is VariableIsTypeTrivia)
                 {
@@ -92,7 +86,7 @@
                     {
                         @false.Trivia.Add(new VariableIsNotNullTrivia(isNullTrivia.Variable));
                     }
-                    else if(trivia is VariableIsNotNullTrivia isNotNullTrivia)
+                    else if (trivia is VariableIsNotNullTrivia isNotNullTrivia)
                     {
                         @false.Trivia.Add(new VariableIsNullTrivia(isNotNullTrivia.Variable));
                     }
@@ -114,7 +108,6 @@
                 Parser.CurrentScope.Trivia.AddRange(@true.Trivia);
             }
 
-            Parser.Merge();
             var scope = Parser.PopScopeStack();
             var result = new If(condition, @true, @false, scope).WithTrivia(scope);
             return result;

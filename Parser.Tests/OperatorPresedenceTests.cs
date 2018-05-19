@@ -16,9 +16,9 @@ namespace Parser.Tests
     [TestFixture]
     public class OperatorPresedenceTests
     {
-        private static Constant True = Constant.True;
-        private static Constant False = Constant.False;
-        private static Constant One = new Constant(1, Types.Int);
+        private static readonly Constant True = Constant.True;
+        private static readonly Constant False = Constant.False;
+        private static readonly Constant One = new Constant(1, Types.Int);
 
         public static readonly object[][] TestCases = new object[][]
         {

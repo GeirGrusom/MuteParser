@@ -14,64 +14,57 @@
 
         public override Expression Parse()
         {
-            Parser.Push();
-            if(Parser.TryReadVerbatim(Kind.Punctuation, out var parensStartNode, '('))
+            using (var stack = Parser.Push())
             {
-                var inner = Parser.Parse<Binary>();
+                if (Parser.TryReadVerbatim(Kind.Punctuation, out var parensStartNode, '('))
+                {
+                    var inner = Parser.Parse<Binary>();
 
-                bool success = true;
-                if(inner == null)
-                {
-                    Parser.SyntaxError("Expected expression");
-                    Parser.Pop();
-                    success = false;
-                }
+                    if (inner == null)
+                    {
+                        Parser.SyntaxError("Expected expression");
+                    }
 
-                if(!Parser.TryReadVerbatim(Kind.Punctuation, out var parensEndNode, ')'))
-                {
-                    Parser.SyntaxError("Expected ')'");
-                    Parser.Pop();
-                    success = false;
+                    if (!Parser.TryReadVerbatim(Kind.Punctuation, out var parensEndNode, ')'))
+                    {
+                        Parser.SyntaxError("Expected ')'");
+                    }
+
+                    stack.Merge();
+                    return inner;
                 }
-                if (success)
-                {
-                    Parser.Merge();
-                }
-                return inner;
-            }
-            else
-            {
-                Parser.Pop();
-            }
 
             if (Parser.TryReadVerbatim(Kind.Literal, out var _, "true"))
             {
-                return Constant.True;
+                    stack.Merge();
+                    return Constant.True;
             }
             if (Parser.TryReadVerbatim(Kind.Literal, out var _, "false"))
             {
-                return Constant.False;
+                    stack.Merge();
+                    return Constant.False;
             }
             if (Parser.TryReadVerbatim(Kind.Literal, out var _, "null"))
             {
-                return Constant.Null;
+                    stack.Merge();
+                    return Constant.Null;
             }
             if (Parser.TryReadWhile(c => char.IsDigit(((char)c)), Kind.Literal, out var value))
             {
-                return new Constant(int.Parse(value.Value), Types.Int);
+                    stack.Merge();
+                    return new Constant(int.Parse(value.Value), Types.Int);
             }
-            Parser.Push();
-            if(Parser.TryReadVerbatim(Kind.StringStart, out var stringStartNode, '"'))
+            if (Parser.TryReadVerbatim(Kind.StringStart, out var stringStartNode, '"'))
             {
                 var nodeContents = new StringBuilder();
                 var contents = new StringBuilder();
                 Position startPos = Parser.CurrentPosition;
                 Position lastPos = Parser.CurrentPosition;
                 bool isEscape = false;
-                while(true)
+                while (true)
                 {
                     var ch = Parser.ReadChar();
-                    
+
                     if (isEscape)
                     {
                         if (ch == '\\')
@@ -101,7 +94,7 @@
                             nodeContents.Append((char)ch);
                             isEscape = true;
                         }
-                        else if(ch == '"')
+                        else if (ch == '"')
                         {
                             break;
                         }
@@ -115,23 +108,23 @@
                 }
                 Parser.AddSyntaxNode(new SyntaxNode(nodeContents.ToString(), Kind.StringContents, startPos));
                 Parser.AddSyntaxNode(new SyntaxNode("\"", Kind.StringEnd, lastPos));
-                Parser.Merge();
+                stack.Merge();
                 return new Constant(contents.ToString(), Types.String);
             }
 
             if (Parser.TryReadVerbatim(Kind.StartArray, out var arrStart, '['))
             {
                 var elements = new List<Expression>();
-                while(true)
+                while (true)
                 {
                     var item = Parser.Parse<Binary>();
                     elements.Add(item);
-                    if(Parser.TryReadVerbatim(Kind.EndArray, out var endNode, ']'))
+                    if (Parser.TryReadVerbatim(Kind.EndArray, out var endNode, ']'))
                     {
                         break;
                     }
 
-                    if(!Parser.TryReadVerbatim(Kind.ArraySeparator, out var sepNode, ','))
+                    if (!Parser.TryReadVerbatim(Kind.ArraySeparator, out var sepNode, ','))
                     {
                         Parser.SyntaxError("Expected ',' or ']'");
                     }
@@ -139,7 +132,7 @@
 
                 TypeShim resultType;
 
-                if(Parser.TryReadVerbatim(Kind.Operator, out var typeNode, ':'))
+                if (Parser.TryReadVerbatim(Kind.Operator, out var typeNode, ':'))
                 {
                     resultType = Parser.Parse<DataType>().Type;
                 }
@@ -147,13 +140,13 @@
                 {
                     resultType = new ArrayTypeShim(new[] { 1 }, elements[0].Type, elements.Any(x => x.Type == Types.Null));
                 }
-                Parser.Merge();
+                stack.Merge();
                 return new Array(elements, (ArrayTypeShim)resultType);
             }
-
-            Parser.Pop();
-
+        }
             return Parser.Parse<Call>();
         }
     }
 }
+
+

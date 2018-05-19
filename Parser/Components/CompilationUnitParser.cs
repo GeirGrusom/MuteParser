@@ -13,28 +13,30 @@ namespace Parser.Components
 
         public override Expression Parse()
         {
-            Parser.Push();
-            Parser.PushScopeStack();
-
-            List<Expression> statements = new List<Expression>();
-            while (true)
+            using (var stack = Parser.Push())
             {
-                var nextStatement = ParseStatement();
-                if (nextStatement == null)
+                Parser.PushScopeStack();
+
+                List<Expression> statements = new List<Expression>();
+                while (true)
                 {
-                    break;
+                    var nextStatement = ParseStatement();
+                    if (nextStatement == null)
+                    {
+                        break;
+                    }
+                    statements.Add(nextStatement);
                 }
-                statements.Add(nextStatement);
+
+                stack.Merge();
+
+                return new CompilationUnit(Parser.PopScopeStack(), statements);
             }
-
-            Parser.Merge();
-
-            return new CompilationUnit(Parser.PopScopeStack(), statements);
         }
 
         private Expression ParseStatement()
         {
-            return Parser.Parse<VariableDeclaration>() ?? Parser.Parse<Assign>() ?? Parser.Parse<If>() ?? Parser.Parse<Method>() ?? Parser.Parse<Using>();
+            return Parser.Parse<Method>() ?? Parser.Parse<Using>();
         }
 
     }

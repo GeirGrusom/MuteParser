@@ -31,6 +31,20 @@ namespace Parser.Expressions
             return result;
         }
 
+        protected override Expression OnVisit(Variable variable)
+        {
+            if(Other is Variable otherVar)
+            {
+                if( otherVar.Name == variable.Name 
+                    && otherVar.Mutable == variable.Mutable 
+                    && otherVar.Type == variable.Type)
+                {
+                    return Constant.True;
+                }
+            }
+            return Constant.False;
+        }
+
         protected override Expression OnVisit(Constant expression)
         {
             if(Other is Constant otherConst)

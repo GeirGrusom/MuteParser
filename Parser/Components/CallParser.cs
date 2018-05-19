@@ -15,59 +15,59 @@ namespace Parser.Components
         public override Expression Parse()
         {
             var lhs = Parser.Parse<Member>();
-            Parser.Push();
-            if(Parser.TryReadVerbatim(Kind.CallStart, out var startNode, '('))
+            using (var stack = Parser.Push())
             {
-                var arguments = new List<Expression>();
-                Expression argument;
-                while(null != (argument = Parser.Parse<Binary>()))
+                if (Parser.TryReadVerbatim(Kind.CallStart, out var startNode, '('))
                 {
-                    arguments.Add(argument);
-                    if(!Parser.TryReadVerbatim(Kind.CallSeparator, out var sepNode, ','))
+                    var arguments = new List<Expression>();
+                    Expression argument;
+                    while (null != (argument = Parser.Parse<Binary>()))
                     {
-                        break;
-                    }
-                }
-
-                if(!Parser.TryReadVerbatim(Kind.CallEnd, out var endNode, ')'))
-                {
-                    Parser.SyntaxError("Expected ')'");
-                    Parser.Pop();
-                    return lhs;
-                }
-
-                TypeShim returnType;
-                if(lhs is Member mem)
-                {
-                    if (mem.MemberInfo is MethodInfo methInfo)
-                    {
-                        returnType = methInfo.CreateTypeShim();
-                    }
-                    else
-                    {
-                        methInfo = FindMethodInfo(mem, arguments);
-                        mem.MemberInfo = methInfo;
-                        if (mem.MemberInfo == null)
+                        arguments.Add(argument);
+                        if (!Parser.TryReadVerbatim(Kind.CallSeparator, out var sepNode, ','))
                         {
-                            returnType = new UnresolvedTypeShim("", true);
+                            break;
                         }
-                        else
+                    }
+
+                    if (!Parser.TryReadVerbatim(Kind.CallEnd, out var endNode, ')'))
+                    {
+                        Parser.SyntaxError("Expected ')'");
+                        return lhs;
+                    }
+
+                    TypeShim returnType;
+                    if (lhs is Member mem)
+                    {
+                        if (mem.MemberInfo is MethodInfo methInfo)
                         {
                             returnType = methInfo.CreateTypeShim();
                         }
+                        else
+                        {
+                            methInfo = FindMethodInfo(mem, arguments);
+                            mem.MemberInfo = methInfo;
+                            if (mem.MemberInfo == null)
+                            {
+                                returnType = new UnresolvedTypeShim("", true);
+                            }
+                            else
+                            {
+                                returnType = methInfo.CreateTypeShim();
+                            }
+                        }
                     }
+                    else
+                    {
+                        returnType = new UnresolvedTypeShim("", true);
+                    }
+                    stack.Merge();
+                    return new Call(lhs, returnType, arguments.ToArray());
                 }
                 else
                 {
-                    returnType = new UnresolvedTypeShim("", true);
+                    return lhs;
                 }
-                Parser.Merge();
-                return new Call(lhs, returnType, arguments.ToArray());
-            }
-            else
-            {
-                Parser.Pop();
-                return lhs;
             }
         }
 

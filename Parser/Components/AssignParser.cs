@@ -13,73 +13,78 @@
         public override Expression Parse()
         {
             var start = Parser.CurrentPosition;
-            Parser.Push();
-            var lhs = Parser.Parse<Member>();
-            if (lhs == null)
+            using (var stack = Parser.Push())
             {
-                Parser.Pop();
-                return null;
-            }
-
-            var pos = Parser.CurrentPosition;
-            if (Parser.TryReadVerbatim(Kind.Operator, out var assignmentOpNode, "<-"))
-            {                
-                var rhs = Parser.Parse<Binary>();
-                if (rhs != null)
+                var lhs = Parser.Parse<Member>();
+                if (lhs == null)
                 {
-                    Parser.Merge();
-                    if (!lhs.IsMutable())
-                    {
-                        Parser.SyntaxError($"The left hand expression is not assignable", assignmentOpNode.Position);
-                    }
+                    return null;
+                }
 
-                    var result = new Assign(lhs, rhs);
-                    if (lhs is Variable variable)
+                var pos = Parser.CurrentPosition;
+                if (Parser.TryReadVerbatim(Kind.Operator, out var assignmentOpNode, "<-"))
+                {
+                    var rhs = Parser.Parse<Binary>();
+                    if (rhs != null)
                     {
-                        if (variable is ShadowingVariable shadowing)
+                        stack.Merge();
+                        if (!lhs.IsMutable())
                         {
-                            if (!Types.IsAssignable(shadowing.Shadow.Type, rhs.Type))
-                            {
-                                Parser.SyntaxError($"Cannot assign expression of type {rhs.Type} to {shadowing.Shadow.Type}.", assignmentOpNode.Position);
-                            }
-                            
-                            if (shadowing.Type != rhs.Type)
-                            {
-                                Parser.Shadow(shadowing.Shadow, rhs.Type);
-                            }
-                        }
-                        else if (!Types.IsAssignable(variable.Type, rhs.Type))
-                        {
-                            Parser.SyntaxError($"Cannot assign expression of type {rhs.Type} to {variable.Type}.", assignmentOpNode.Position);
-                        }
-                        else
-                        {
-                            if(lhs.Type != rhs.Type)
-                            {
-                                Parser.Shadow(variable, rhs.Type);
-                            }
+                            Parser.SyntaxError($"The left hand expression is not assignable", assignmentOpNode.Position);
                         }
 
-                        var assigned = new VariableAssignedTrivia(variable);
-                        Parser.CurrentScope.Trivia.Add(assigned);
-                        result.Trivia.Add(assigned);
-                        result = result.WithTrivia(lhs);
-                        result = result.WithTrivia(rhs);
+                        var result = new Assign(lhs, rhs);
+                        if (lhs is Variable variable)
+                        {
+                            result = CreateAssignment(lhs, assignmentOpNode, rhs, result, variable);
+                        }
+                        return result;
                     }
-                    return result;
+                    else
+                    {
+                        Parser.SyntaxError("Expected expression", pos);
+                        return null;
+                    }
                 }
                 else
                 {
-                    Parser.SyntaxError("Expected expression", pos);
-                    Parser.Pop();
                     return null;
                 }
             }
+        }
+
+        private Assign CreateAssignment(Expression lhs, SyntaxNode assignmentOpNode, Expression rhs, Assign result, Variable variable)
+        {
+            if (variable is ShadowingVariable shadowing)
+            {
+                if (!Types.IsAssignable(shadowing.Shadow.Type, rhs.Type))
+                {
+                    Parser.SyntaxError($"Cannot assign expression of type {rhs.Type} to {shadowing.Shadow.Type}.", assignmentOpNode.Position);
+                }
+
+                if (shadowing.Type != rhs.Type)
+                {
+                    Parser.Shadow(shadowing.Shadow, rhs.Type);
+                }
+            }
+            else if (!Types.IsAssignable(variable.Type, rhs.Type))
+            {
+                Parser.SyntaxError($"Cannot assign expression of type {rhs.Type} to {variable.Type}.", assignmentOpNode.Position);
+            }
             else
             {
-                Parser.Pop();
-                return null;
+                if (lhs.Type != rhs.Type)
+                {
+                    Parser.Shadow(variable, rhs.Type);
+                }
             }
+
+            var assigned = new VariableAssignedTrivia(variable);
+            Parser.CurrentScope.Trivia.Add(assigned);
+            result.Trivia.Add(assigned);
+            result = result.WithTrivia(lhs);
+            result = result.WithTrivia(rhs);
+            return result;
         }
     }
 }
