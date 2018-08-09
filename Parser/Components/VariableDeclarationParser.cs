@@ -72,9 +72,9 @@
                 }
 
                 stack.Merge();
-                var res = new VariableDeclaration(name.Value, isMutable, type, result);
+                var res = new VariableDeclaration(name.Value.ToString(), isMutable, type, result);
 
-                var shadow = Parser.FindVariable(name.Value);
+                var shadow = Parser.FindVariable(name.Value.ToString());
                 if (shadow != null)
                 {
                     Parser.SyntaxError($"Cannot shadow variable {name}", name.Position);

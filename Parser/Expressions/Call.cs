@@ -22,7 +22,8 @@ namespace Parser.Expressions
 
         public override string ToString()
         {
-            return $"{Left}({String.Join(", ", Arguments.AsEnumerable())})";
+            string lhsName = Left is Method meth ? meth.Name : Left.ToString();
+            return $"{lhsName}({String.Join(", ", Arguments.AsEnumerable())})";
         }
     }
 
@@ -31,6 +32,7 @@ namespace Parser.Expressions
         public TupleCall(Expression left, TypeShim returnType, Expression argument)
             : base(returnType)
         {
+            Left = left;
             Argument = argument;
             ReturnType = returnType;
         }
@@ -41,6 +43,10 @@ namespace Parser.Expressions
 
         public override string ToString()
         {
+            if(Left is Method meth)
+            {
+                return $"{meth.Name}!{Argument}";
+            }
             return $"{Left}!{Argument}";
         }
     }

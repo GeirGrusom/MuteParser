@@ -29,7 +29,7 @@ namespace Parser.Components
                         return null;
                     }
                     stack.Merge();
-                    return new Parameter(name.Value, false, typeExpr.Type);
+                    return new Parameter(name.Value.ToString(), false, typeExpr.Type);
                 }
                 else
                 {

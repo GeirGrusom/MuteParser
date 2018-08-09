@@ -19,7 +19,8 @@ namespace Parser.Components
             {
                 if (Parser.TryReadIdentifier(out var id))
                 {
-                    var lhs = Parser.FindVariable(id.Value) ?? (Expression)new UnresolvedIdentifier(id.Value);
+                    string sid = id.Value.ToString();
+                    var lhs = Parser.FindVariable(sid) ?? Parser.FindMethod(sid)  ?? (Expression)new UnresolvedIdentifier(sid);
                     var res = Parse(lhs);
                     if (res == null)
                     {
@@ -45,21 +46,23 @@ namespace Parser.Components
                     Parser.SyntaxError("Expected identifier");
                     return null;
                 }
+
+                string sid = id.Value.ToString();
                 MemberInfo memberInfo = null;
                 if (lhs is Variable)
                 {
                     var varType = Types.GetClrTypeFromShim(lhs.Type);
                     if (varType != null)
                     {
-                        memberInfo = GetMemberInfo(varType, id.Value);
+                        memberInfo = GetMemberInfo(varType, sid);
                     }
                 }
                 else if (lhs is Member mem)
                 {
-                    memberInfo = GetMemberInfo(Types.GetClrTypeFromShim(mem.Type), id.Value);
+                    memberInfo = GetMemberInfo(Types.GetClrTypeFromShim(mem.Type), sid);
                 }
 
-                var res = new Member(lhs, id.Value, memberInfo, memberInfo.CreateTypeShim() ?? new UnresolvedTypeShim("", true));
+                var res = new Member(lhs, sid, memberInfo, memberInfo.CreateTypeShim() ?? new UnresolvedTypeShim("", true));
                 return Parse(res);
             }
             else

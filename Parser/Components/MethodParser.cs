@@ -77,7 +77,9 @@ namespace Parser.Components
                     return null;
                 }
                 stack.Merge();
-                return new Method(returnType ?? block.Type, methodName.Value, block, Parser.PopScopeStack(), varDecl.ToArray());
+                var result = new Method(returnType ?? block.Type, methodName.Value.ToString(), block, Parser.PopScopeStack(), varDecl.ToArray());
+                Parser.CurrentScope.Add(result);
+                return result;
             }
         }
     }

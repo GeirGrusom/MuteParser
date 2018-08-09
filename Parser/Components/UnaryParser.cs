@@ -28,26 +28,38 @@ namespace Parser.Components
                     }
 
                     stack.Merge();
-                    switch (opNode.Value)
+
+                    ReadOnlySpan<char> plusSpan = stackalloc char[] { '+' };
+
+                    if (opNode.Value.Span.Equals(plusSpan, StringComparison.Ordinal))
                     {
-                        case "+":
-                            return new Plus(operand);
-                        case "-":
-                            return new Minus(operand);
-                        case "!":
-                            var result = new Not(operand);
-                            foreach (var trivia in operand.Trivia)
+                        return new Plus(operand);
+                    }
+
+                    ReadOnlySpan<char> minusSpan = stackalloc char[] { '-' };
+
+                    if (opNode.Value.Span.Equals(minusSpan, StringComparison.Ordinal))
+                    {
+                        return new Minus(operand);
+                    }
+
+                    ReadOnlySpan<char> notSpan = stackalloc char[] { '!' };
+
+                    if (opNode.Value.Span.Equals(notSpan, StringComparison.Ordinal))
+                    { 
+                        var result = new Not(operand);
+                        foreach (var trivia in operand.Trivia)
+                        {
+                            if (trivia is VariableIsNotNullTrivia notNullTrivia)
                             {
-                                if (trivia is VariableIsNotNullTrivia notNullTrivia)
-                                {
-                                    result.Trivia.Add(new VariableIsNullTrivia(notNullTrivia.Variable));
-                                }
-                                else if (trivia is VariableIsNullTrivia nullTrivia)
-                                {
-                                    result.Trivia.Add(new VariableIsNotNullTrivia(nullTrivia.Variable));
-                                }
+                                result.Trivia.Add(new VariableIsNullTrivia(notNullTrivia.Variable));
                             }
-                            return result;
+                            else if (trivia is VariableIsNullTrivia nullTrivia)
+                            {
+                                result.Trivia.Add(new VariableIsNotNullTrivia(nullTrivia.Variable));
+                            }
+                        }
+                        return result;
                     }
                     throw new NotSupportedException();
                 }

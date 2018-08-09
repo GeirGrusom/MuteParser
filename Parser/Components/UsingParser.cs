@@ -18,7 +18,7 @@ namespace Parser.Components
             {
                 if (Parser.TryReadVerbatim(Kind.Keyword, out var usingNode, "using"))
                 {
-                    var resultNamespace = new List<string>();
+                    var resultNamespace = new List<ReadOnlyMemory<char>>();
 
                     while (Parser.TryReadIdentifier(out var nsId))
                     {

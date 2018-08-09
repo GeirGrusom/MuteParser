@@ -45,20 +45,20 @@ namespace Parser.SyntaxNodes
 
     public class SyntaxNode
     {
-        public SyntaxNode(string value, Kind kind, Position position)
+        public SyntaxNode(ReadOnlyMemory<char> value, Kind kind, Position position)
         {
             Value = value;
             Position = position;
             Kind = kind;
         }
 
-        public string Value { get; }
+        public ReadOnlyMemory<char> Value { get; }
 
         public Position Position { get; }
 
         public Kind Kind { get; }
 
-        public override string ToString() => Value;
+        public override string ToString() => Value.ToString();
 
         public override int GetHashCode()
         {

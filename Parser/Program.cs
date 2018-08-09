@@ -51,13 +51,17 @@ namespace Parser
                 }
                 for (int i = 0; i < node.Value.Length; ++i)
                 {
-                    if (node.Value[i] == '\n')
+                    if(node.Value.Span[i] == '\r')
+                    {
+                        continue;
+                    }
+                    if (node.Value.Span[i] == '\n')
                     {
                         IncrementLineNumber();
                     }
                     else
                     {
-                        Console.Write(node.Value[i]);
+                        Console.Write(node.Value.Span[i]);
                     }
                 }
             }
@@ -69,9 +73,16 @@ namespace Parser
         {
 
             string c =
-@"main(args: string[]?)
+@"
+test(a: i32, b: i32, c: i32)
+{
+}
+
+main(args: string[]?)
 {
     var def: i32? <- 100;
+
+    let abcd <- (first: 1, second: 2, third: 3);
 
     if(def != null)
     {
@@ -90,7 +101,7 @@ namespace Parser
             var stream = new MemoryStream(Encoding.UTF8.GetBytes(c));
             var references = new References(new[] { typeof(System.String).Assembly });
 
-            var parser = new Parser(references, stream);
+            var parser = new Parser(references, c);
 
             var res = parser.Parse();
 
@@ -115,8 +126,6 @@ namespace Parser
                 Console.WriteLine(err.Message);
                 Console.ForegroundColor = ConsoleColor.Gray;
                 Console.BackgroundColor = ConsoleColor.Black;
-
-
             }
         }
 
@@ -143,7 +152,7 @@ namespace Parser
         {
             for (int i = start; i < text.Length; ++i)
             {
-                if (text[i] == '\n' || text[i] == '\r')
+                if (text[i] == '\n')
                 {
                     return i;
                 }

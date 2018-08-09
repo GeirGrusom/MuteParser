@@ -413,6 +413,11 @@ namespace Parser
             throw new NotImplementedException();
         }
 
+        public static TypeShim GetTupleTypeShim(TypeShim[] members)
+        {
+            return new TupleTypeShim(false, members.Select((x, i) => new Variable($"Value{i}", x.Nullable, x)).ToArray());
+        }
+
         public static TypeShim GetTypeShim(Type clrType, bool nullable)
         {
             if(clrType == null)

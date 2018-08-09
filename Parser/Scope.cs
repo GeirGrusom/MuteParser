@@ -9,6 +9,7 @@ namespace Parser
     public sealed class Scope
     {
         public List<Variable> Variables { get; }
+        public List<Method> Methods { get; }
         public List<Trivia> Trivia { get; }
         public List<Using> Using { get; }
 
@@ -21,12 +22,16 @@ namespace Parser
         {
             Variables = new List<Variable>();
             Trivia = new List<Trivia>(trivia);
+            Using = new List<Using>();
+            Methods = new List<Method>();
         }
 
         public Scope(IEnumerable<Variable> variables)
         {
             Variables = new List<Variable>(variables);
             Trivia = new List<Trivia>();
+            Using = new List<Using>();
+            Methods = new List<Method>();
         }
 
         public Scope()
@@ -34,6 +39,7 @@ namespace Parser
             Variables = new List<Variable>();
             Trivia = new List<Trivia>();
             Using = new List<Using>();
+            Methods = new List<Method>();
         }
 
         public void Add(Variable variable)
@@ -44,6 +50,11 @@ namespace Parser
         public void Add(Trivia trivia)
         {
             Trivia.Add(trivia);
+        }
+
+        public void Add(Method method)
+        {
+            Methods.Add(method);
         }
     }
 }

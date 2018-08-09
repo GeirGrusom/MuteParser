@@ -14,9 +14,7 @@ namespace Parser
 
     public class Parser
     {
-        private readonly List<int> uncomittedBuffer;
-        private readonly Stream source;
-        private readonly StreamReader reader;
+        private readonly string source;
 
         private readonly Dictionary<Type, Components.ParserComponent> parsers;
 
@@ -29,10 +27,12 @@ namespace Parser
 
         public List<SyntaxError> SyntaxErrors { get; }
 
+        public string Source => source;
+
         public Position CurrentPosition { get => currentPosition; set => currentPosition = value; }
 
         public Parser(string source)
-            : this(new References(new Assembly[0]), new MemoryStream(Encoding.UTF8.GetBytes(source)))
+            : this(new References(new Assembly[0]), source)
         {
         }
 
@@ -41,16 +41,14 @@ namespace Parser
         public int ScopeStackCount => scopeStack.Count;
 
         public int StackCount => positionStack.Count;
-        public Parser(References externalReferences, Stream source)
+        public Parser(References externalReferences, string source)
         {
             syntaxNodes = new List<SyntaxNodes.SyntaxNode>();
             this.parsers = new Dictionary<Type, Components.ParserComponent>();
             SetupParsers();
             this.source = source;
-            this.uncomittedBuffer = new List<int>();
             SyntaxErrors = new List<SyntaxError>();
             positionStack = new RefStack<Position>();
-            reader = new StreamReader(source);
             scopeStack = new List<Scope>();
             unresolvedTypes = new Dictionary<(string, bool), UnresolvedTypeShim>();
         }
@@ -178,6 +176,22 @@ namespace Parser
             }
         }
 
+        public Method FindMethod(string name)
+        {
+            for (int i = scopeStack.Count - 1; i >= 0; --i)
+            {
+                var scope = scopeStack[i];
+                for (int j = scope.Methods.Count - 1; j >= 0; --j)
+                {
+                    if (string.Equals(scope.Methods[j].Name, name, StringComparison.Ordinal))
+                    {
+                        return scope.Methods[j];
+                    }
+                }
+            }
+            return null;
+        }
+
         public Variable FindVariable(string name)
         {
             for (int i = scopeStack.Count - 1; i >= 0; --i)
@@ -219,12 +233,8 @@ namespace Parser
                             value = null;
                             return false;
                         }
-                        StringBuilder result = new StringBuilder();
-                        for (int i = start.Value; i < pos.Value; ++i)
-                        {
-                            result.Append(Encoding.UTF32.GetChars(BitConverter.GetBytes(uncomittedBuffer[i])));
-                        }
-                        value = new SyntaxNode(result.ToString(), kind, start);
+                        
+                        value = new SyntaxNode(source.AsMemory(start.Value, pos.Value - start.Value), kind, start);
                         AddSyntaxNode(value);
                         stack.Merge();
                         currentPosition = pos;
@@ -241,23 +251,23 @@ namespace Parser
 
         public bool TryReadHexadecimal(out SyntaxNode value)
         {
+            SkipWhiteSpaceAndComments();
             var start = currentPosition;
-            using (var stack = Push())
+            var c = ReadChar();
+            if (c != '0' || ReadChar() != 'x')
             {
-                var c = ReadChar();
-                if (c != '0' || ReadChar() != 'x')
-                {
-                    value = null;
-                    return false;
-                }
+                currentPosition = start;
+                value = null;
+                return false;
             }
+
             var pos = currentPosition;
             using (var stack = Push())
             {
                 do
                 {
                     pos = currentPosition;
-                    var c = ReadChar();
+                    c = ReadChar();
                     if (Char.IsDigit((char)c) || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F')
                     {
                         continue;
@@ -269,12 +279,8 @@ namespace Parser
                             value = null;
                             return false;
                         }
-                        StringBuilder result = new StringBuilder();
-                        for (int i = start.Value; i < pos.Value; ++i)
-                        {
-                            result.Append(Encoding.UTF32.GetChars(BitConverter.GetBytes(uncomittedBuffer[i])));
-                        }
-                        value = new SyntaxNode(result.ToString(), Kind.Literal, start);
+
+                        value = new SyntaxNode(source.AsMemory(start.Value, pos.Value - start.Value), Kind.Literal, start);
                         AddSyntaxNode(value);
                         stack.Merge();
                         currentPosition = pos;
@@ -308,12 +314,7 @@ namespace Parser
                     }
                     else
                     {
-                        StringBuilder result = new StringBuilder();
-                        for (int i = start.Value; i < pos.Value; ++i)
-                        {
-                            result.Append(Encoding.UTF32.GetChars(BitConverter.GetBytes(uncomittedBuffer[i])));
-                        }
-                        identifier = new SyntaxNode(result.ToString(), Kind.Identifier, start);
+                        identifier = new SyntaxNode(source.AsMemory(start.Value, pos.Value - start.Value), Kind.Identifier, start);
                         AddSyntaxNode(identifier);
                         stack.Merge();
                         currentPosition = pos;
@@ -330,18 +331,17 @@ namespace Parser
 
         private void SkipWhiteSpaceAndComments()
         {
-            Position pos = CurrentPosition;
-            StringBuilder builder = new StringBuilder();
-            Position startPos = pos;
+            Position pos = currentPosition;
+            Position startPos = currentPosition;
 
             void Emit(Kind kind)
             {
-                if(builder.Length == 0)
+                if(startPos.Value == pos.Value)
                 {
                     return;
                 }
-                AddSyntaxNode(new SyntaxNode(builder.ToString(), kind, pos));
-                builder.Clear();
+
+                AddSyntaxNode(new SyntaxNode(source.AsMemory(startPos.Value, pos.Value - startPos.Value), kind, pos));
             }
 
             bool isInComment = false;
@@ -359,15 +359,18 @@ namespace Parser
                             isInComment = true;
                             Emit(Kind.WhiteSpace);
                             startPos = lastPos;
-                            builder.Append("/*");                            
+                            pos = currentPosition;
                             continue;
                         }
                         else if (ch == '/')
                         {
-                            while (ch != '\n')
+                            do
                             {
                                 ch = ReadChar();
-                            }
+                            } while (ch != '\n');
+
+                            pos = currentPosition;
+                            Emit(Kind.WhiteSpace);
                             return;
                         }
                         else
@@ -379,11 +382,11 @@ namespace Parser
                     }
                     else if (char.IsWhiteSpace((char)ch))
                     {
-                        builder.Append((char)ch);
                         continue;
                     }
                     else
                     {
+                        pos = lastPos;
                         Emit(Kind.WhiteSpace);
                         currentPosition = lastPos;
                         return;
@@ -397,16 +400,12 @@ namespace Parser
                         if (ch == '/')
                         {
                             isInComment = false;
-                            builder.Append("*/");
+                            pos = currentPosition;
                             Emit(Kind.Comment);
                             lastPos = CurrentPosition;
                             
                             continue;
                         }
-                    }
-                    else
-                    {
-                        builder.Append((char)ch);
                     }
                 }
             }
@@ -419,7 +418,55 @@ namespace Parser
             var c = ReadChar();
             if (value == c)
             {
-                node = new SyntaxNode(((char)c).ToString(), kind, pos);
+                node = new SyntaxNode(source.AsMemory(pos.Value, 1), kind, pos);
+                AddSyntaxNode(node);
+                return true;
+            }
+            currentPosition = pos;
+            node = null;
+            return false;
+        }
+
+        public bool TryReadVerbatim(Kind kind, out SyntaxNode node, char v1, char v2)
+        {
+            SkipWhiteSpaceAndComments();
+            var pos = currentPosition;
+            var c = ReadChar();
+            if (v1 == c || v2 == c)
+            {
+                node = new SyntaxNode(source.AsMemory(pos.Value, 1), kind, pos);
+                AddSyntaxNode(node);
+                return true;
+            }
+            currentPosition = pos;
+            node = null;
+            return false;
+        }
+
+        public bool TryReadVerbatim(Kind kind, out SyntaxNode node, char v1, char v2, char v3)
+        {
+            SkipWhiteSpaceAndComments();
+            var pos = currentPosition;
+            var c = ReadChar();
+            if (v1 == c || v2 == c || v3 == c)
+            {
+                node = new SyntaxNode(source.AsMemory(pos.Value, 1), kind, pos);
+                AddSyntaxNode(node);
+                return true;
+            }
+            currentPosition = pos;
+            node = null;
+            return false;
+        }
+
+        public bool TryReadVerbatim(Kind kind, out SyntaxNode node, char v1, char v2, char v3, char v4)
+        {
+            SkipWhiteSpaceAndComments();
+            var pos = currentPosition;
+            var c = ReadChar();
+            if (v1 == c || v2 == c || v3 == c || v4 == c)
+            {
+                node = new SyntaxNode(source.AsMemory(pos.Value, 1), kind, pos);
                 AddSyntaxNode(node);
                 return true;
             }
@@ -431,6 +478,7 @@ namespace Parser
         public bool TryReadVerbatim(Kind kind, out SyntaxNode node, string value)
         {
             SkipWhiteSpaceAndComments();
+            var start = CurrentPosition;
             Position pos = CurrentPosition;
             using (var stack = Push())
             {
@@ -446,7 +494,7 @@ namespace Parser
                     ++count;
                 } while (count < value.Length);
                 stack.Merge();
-                node = new SyntaxNode(value.ToString(), kind, pos);
+                node = new SyntaxNode(source.AsMemory(start.Value, value.Length), kind, pos);
                 AddSyntaxNode(node);
                 return true;
             }
@@ -459,7 +507,7 @@ namespace Parser
             var c = (char)ReadChar();
             if (values.Contains(c))
             {
-                node = new SyntaxNode(((char)c).ToString(), kind, pos);
+                node = new SyntaxNode(source.AsMemory(pos.Value, 1), kind, pos);
                 AddSyntaxNode(node);
                 return true;
             }
@@ -558,16 +606,12 @@ namespace Parser
 
         public int ReadChar()
         {
-            if (currentPosition.Value >= uncomittedBuffer.Count)
+            if (currentPosition.Value >= source.Length)
             {
-                if (uncomittedBuffer.Count > 0 && uncomittedBuffer[uncomittedBuffer.Count - 1] == -1)
-                {
-                    return -1;
-                }
-                uncomittedBuffer.Add(reader.Read());
+                return -1;
             }
 
-            var result = uncomittedBuffer[currentPosition.Value];
+            var result = source[currentPosition.Value];
 
             if (result == '\n')
             {

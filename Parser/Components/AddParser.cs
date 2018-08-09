@@ -7,6 +7,7 @@ namespace Parser.Components
 {
     public sealed class AddParser : ParserComponent<Add>
     {
+
         public AddParser(Parser parser) : base(parser)
         {
         }
@@ -18,13 +19,19 @@ namespace Parser.Components
             if (Parser.TryReadVerbatim(SyntaxNodes.Kind.Operator, out var op, '+', '-'))
             {
                 var rhs = Parser.Parse<Add>();
-                switch (op.Value)
+
+                ReadOnlySpan<char> plusSpan = stackalloc char[] { '+' };
+                ReadOnlySpan<char> minusSpan = stackalloc char[] { '-' };
+
+                if (op.Value.Span.Equals(plusSpan, StringComparison.Ordinal))
                 {
-                    case "+":
-                        return new Add(lhs, rhs, lhs.Type);
-                    case "-":
-                        return new Subtract(lhs, rhs, lhs.Type);
+                    return new Add(lhs, rhs, lhs.Type);
                 }
+                if (op.Value.Span.Equals(minusSpan, StringComparison.Ordinal))
+                {
+                    return new Subtract(lhs, rhs, lhs.Type);
+                }
+
                 throw new NotImplementedException();
             }
             else

@@ -26,7 +26,7 @@ namespace Parser.Components
                 {
                     var nextStatement = ParseStatement();
 
-                    if(nextStatement is Assign || nextStatement is Call || nextStatement is Return || nextStatement is VariableDeclaration)
+                    if(nextStatement is Assign || nextStatement is Call || nextStatement is TupleCall || nextStatement is Return || nextStatement is VariableDeclaration)
                     {
                         if(!Parser.TryReadVerbatim(Kind.Punctuation, out var endOfStatement, ';'))
                         {
